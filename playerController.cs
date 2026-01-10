@@ -25,6 +25,8 @@ public class playerController : MonoBehaviour
     bool isGrounded;
     bool hasJumped;   // true after first jump, reset on ground
     bool usedBoost;   // true after W boost, reset on ground
+    public int facingDir = 1;   // 1 = right, -1 = left
+
 
     void Awake()
     {
@@ -86,13 +88,24 @@ void CheckGround()
     }
 
 void HandleMove()
-    {
-        float moveInput = 0f;
-        if (Input.GetKey(KeyCode.A)) moveInput = -1f;
-        else if (Input.GetKey(KeyCode.D)) moveInput = 1f;
+{
+    float moveInput = 0f;
 
-        rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
+    if (Input.GetKey(KeyCode.A)) moveInput = -1f;
+    else if (Input.GetKey(KeyCode.D)) moveInput = 1f;
+
+    rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
+
+    // update facing direction and flip sprite
+    if (moveInput != 0)
+    {
+        facingDir = moveInput > 0 ? 1 : -1;
+        Vector3 scale = transform.localScale;
+        scale.x = Mathf.Abs(scale.x) * facingDir;
+        transform.localScale = scale;
     }
+}
+
 
     void HandleJumpAndBoost()
     {

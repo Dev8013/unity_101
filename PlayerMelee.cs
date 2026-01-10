@@ -16,20 +16,51 @@ public class PlayerMelee : MonoBehaviour
     float lastAttackTime = -999f;
     bool canAttack = true;
 
-    void Update()
-    {
-        // Left mouse click = attack
-        if (Input.GetMouseButtonDown(0) && canAttack)
-        {
-            Attack();
-        }
+    public Vector2 swordOffsetRight = new Vector2(0.5f, 0f);
+    public Vector2 swordOffsetLeft  = new Vector2(-0.5f, 0f);
+    public Vector2 attackPointRight = new Vector2(1f, 0f);
+    public Vector2 attackPointLeft  = new Vector2(-1f, 0f);
 
-        // Hide sword if idle too long
-        if (Time.time - lastAttackTime > idleHideTime)
-        {
-            SetSwordVisible(false);
-        }
+    playerController pc;
+
+    void Awake()
+{
+    pc = GetComponent<playerController>();
+}
+
+
+
+    void Update()
+{
+    if (pc != null)
+        UpdateSwordSide();
+
+    if (Input.GetMouseButtonDown(0) && canAttack)
+        Attack();
+
+    if (Time.time - lastAttackTime > idleHideTime)
+        SetSwordVisible(false);
+}
+
+void UpdateSwordSide()
+{
+    int dir = pc != null ? pc.facingDir : 1;
+
+    if (sword != null)
+    {
+        Vector2 offset = dir == 1 ? swordOffsetRight : swordOffsetLeft;
+        sword.transform.localPosition = offset;
+        Vector3 sScale = sword.transform.localScale;
+        sScale.x = Mathf.Abs(sScale.x) * dir;    // flip sword sprite
+        sword.transform.localScale = sScale;
     }
+
+    if (attackPoint != null)
+    {
+        Vector2 atkOffset = dir == 1 ? attackPointRight : attackPointLeft;
+        attackPoint.localPosition = atkOffset;
+    }
+}
 
     void Attack()
     {

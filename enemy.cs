@@ -9,5 +9,18 @@ public class Enemy : MonoBehaviour
     public void TakeDamage(int amount)
     {
         currentHealth = Mathf.Clamp(currentHealth - amount, 0, maxHealth);
+
+        // TODO: update boss UI health bar here if you have a reference
+
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
+
+    void Die()
+    {
+        // you can play animation / sound here later
+        Destroy(gameObject);
     }
 }
