@@ -19,6 +19,20 @@ public class playerController : MonoBehaviour
     public float groundCheckRadius = 0.1f;
     public LayerMask groundLayer;
 
+    [Header("Jump Cooldown")]
+    public float jumpCooldown = 0.5f;   // seconds between jumps
+    float lastJumpTime = -999f;
+
+    
+
+    [Header("Dash")]
+    public float dashForce = 15f;
+    public float dashDuration = 0.15f;
+    public float dashCooldown = 1f;
+
+    bool isDashing = false;
+    float lastDashTime = -999f;
+
     Rigidbody2D rb;
     Vector3 originalScale;
     int jumpsLeft;
@@ -36,13 +50,16 @@ public class playerController : MonoBehaviour
     }
 
     void Update()
+{
+    CheckGround();
+    HandleDashInput();
+    if (!isDashing)
     {
-        CheckGround();
         HandleMove();
         HandleJump();
         HandleCrouch();
-        HandleJumpAndBoost();
     }
+}
 
 
 
@@ -127,12 +144,46 @@ void HandleMove()
     
 void HandleJump()
 {
-    if (Input.GetKeyDown(KeyCode.Space))
+    // one jump only when grounded and cooldown finished
+    if (Input.GetKeyDown(KeyCode.Space) && isGrounded &&
+        Time.time >= lastJumpTime + jumpCooldown)
     {
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
         rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+        lastJumpTime = Time.time;
     }
 }
+
+void HandleDashInput()
+{
+    if (Input.GetKeyDown(KeyCode.LeftShift) &&
+        !isDashing &&
+        Time.time >= lastDashTime + dashCooldown)
+    {
+        StartCoroutine(Dash());
+    }
+}
+
+System.Collections.IEnumerator Dash()
+{
+    isDashing = true;
+    lastDashTime = Time.time;
+
+    // Use facing direction (from your movement script)
+    int dir = facingDir != 0 ? facingDir : 1;
+    rb.linearVelocity = new Vector2(dir * dashForce, 0f);
+
+    // optional: disable gravity while dashing
+    float originalGravity = rb.gravityScale;
+    rb.gravityScale = 0f;
+
+    yield return new WaitForSeconds(dashDuration);
+
+    rb.gravityScale = originalGravity;
+    isDashing = false;
+}
+
+
 
     void HandleCrouch()
     {
