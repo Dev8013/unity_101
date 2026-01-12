@@ -5,7 +5,7 @@ public class playerController : MonoBehaviour
     [Header("Movement")]
     public float moveSpeed = 5f;
     public float jumpForce = 10f;
-     public float boostForce = 3f;
+    public float boostForce = 3f;
 
     [Header("Jump Settings")]
     public int maxJumps = 2;
@@ -16,14 +16,12 @@ public class playerController : MonoBehaviour
 
     [Header("Ground Check")]
     public Transform groundCheck;
-    public float groundCheckRadius = 0.1f;
+    public float groundCheckRadius = 0.2f;
     public LayerMask groundLayer;
 
     [Header("Jump Cooldown")]
-    public float jumpCooldown = 0.5f;   // seconds between jumps
+    public float jumpCooldown = 0.5f;
     float lastJumpTime = -999f;
-
-    
 
     [Header("Dash")]
     public float dashForce = 15f;
@@ -35,155 +33,108 @@ public class playerController : MonoBehaviour
 
     Rigidbody2D rb;
     Vector3 originalScale;
-    int jumpsLeft;
     bool isGrounded;
-    bool hasJumped;   // true after first jump, reset on ground
-    bool usedBoost;   // true after W boost, reset on ground
-    public int facingDir = 1;   // 1 = right, -1 = left
-
+    bool hasJumped;
+    bool usedBoost;
+    public int facingDir = 1;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         originalScale = transform.localScale;
-        jumpsLeft = maxJumps;
     }
 
     void Update()
-{
-    CheckGround();
-    HandleDashInput();
-    if (!isDashing)
     {
-        HandleMove();
-        HandleJump();
-        HandleCrouch();
-    }
-}
+        CheckGround();
+        HandleDashInput();
 
-
-
-
-    
-
-//     void HandleJump()
-// {
-//     // Space pressed this frame?
-//     if (Input.GetKeyDown(KeyCode.Space))
-//     {
-//         // 1) First jump: only when grounded
-//         if (isGrounded && jumpsLeft == maxJumps)
-//         {
-//             float force = Input.GetKey(KeyCode.W) ? extraJumpForce : jumpForce;
-
-//             rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
-//             rb.AddForce(Vector2.up * force, ForceMode2D.Impulse);
-
-//             jumpsLeft--;          // now jumpsLeft = 1
-//             return;
-//         }
-
-//         // 2) Double jump: in air, still has a jump left
-//         if (!isGrounded && jumpsLeft > 0)
-//         {
-//             rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
-//             rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-
-//             jumpsLeft = 0;
-//         }
-//     }
-// }
-void CheckGround()
-    {
-        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
-
-        if (isGrounded)
+        if (!isDashing)
         {
-            hasJumped = false;  // can jump again
-            usedBoost = false;  // can boost again
+            HandleMove();
+            HandleJumpAndBoost();
+            HandleCrouch();
         }
     }
 
-void HandleMove()
-{
-    float moveInput = 0f;
-
-    if (Input.GetKey(KeyCode.A)) moveInput = -1f;
-    else if (Input.GetKey(KeyCode.D)) moveInput = 1f;
-
-    rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
-
-    // update facing direction and flip sprite
-    if (moveInput != 0)
+    void CheckGround()
     {
-        facingDir = moveInput > 0 ? 1 : -1;
-        Vector3 scale = transform.localScale;
-        scale.x = Mathf.Abs(scale.x) * facingDir;
-        transform.localScale = scale;
+        isGrounded = Physics2D.OverlapCircle(
+            groundCheck.position,
+            groundCheckRadius,
+            groundLayer
+        );
+
+        if (isGrounded)
+        {
+            hasJumped = false;
+            usedBoost = false;
+        }
     }
-}
 
+    void HandleMove()
+    {
+        float moveInput = 0f;
 
+        if (Input.GetKey(KeyCode.A)) moveInput = -1f;
+        else if (Input.GetKey(KeyCode.D)) moveInput = 1f;
+
+        rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
+
+        if (moveInput != 0)
+        {
+            facingDir = moveInput > 0 ? 1 : -1;
+            Vector3 scale = transform.localScale;
+            scale.x = Mathf.Abs(scale.x) * facingDir;
+            transform.localScale = scale;
+        }
+    }
+
+    // single jump + W boost (no double jump)
     void HandleJumpAndBoost()
     {
-        // Single jump from ground with Space
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded && !hasJumped)
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded && !hasJumped &&
+            Time.time >= lastJumpTime + jumpCooldown)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
             rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
             hasJumped = true;
+            lastJumpTime = Time.time;
         }
 
-        // One‑time boost in air with W
         if (Input.GetKeyDown(KeyCode.W) && !isGrounded && !usedBoost)
         {
             rb.AddForce(Vector2.up * boostForce, ForceMode2D.Impulse);
             usedBoost = true;
         }
     }
-    
-void HandleJump()
-{
-    // one jump only when grounded and cooldown finished
-    if (Input.GetKeyDown(KeyCode.Space) && isGrounded &&
-        Time.time >= lastJumpTime + jumpCooldown)
+
+    void HandleDashInput()
     {
-        rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
-        rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-        lastJumpTime = Time.time;
+        if (Input.GetKeyDown(KeyCode.LeftShift) &&
+            !isDashing &&
+            Time.time >= lastDashTime + dashCooldown)
+        {
+            StartCoroutine(Dash());
+        }
     }
-}
 
-void HandleDashInput()
-{
-    if (Input.GetKeyDown(KeyCode.LeftShift) &&
-        !isDashing &&
-        Time.time >= lastDashTime + dashCooldown)
+    System.Collections.IEnumerator Dash()
     {
-        StartCoroutine(Dash());
+        isDashing = true;
+        lastDashTime = Time.time;
+
+        int dir = facingDir != 0 ? facingDir : 1;
+        rb.linearVelocity = new Vector2(dir * dashForce, 0f);
+
+        float originalGravity = rb.gravityScale;
+        rb.gravityScale = 0f;
+
+        yield return new WaitForSeconds(dashDuration);
+
+        rb.gravityScale = originalGravity;
+        isDashing = false;
     }
-}
-
-System.Collections.IEnumerator Dash()
-{
-    isDashing = true;
-    lastDashTime = Time.time;
-
-    // Use facing direction (from your movement script)
-    int dir = facingDir != 0 ? facingDir : 1;
-    rb.linearVelocity = new Vector2(dir * dashForce, 0f);
-
-    // optional: disable gravity while dashing
-    float originalGravity = rb.gravityScale;
-    rb.gravityScale = 0f;
-
-    yield return new WaitForSeconds(dashDuration);
-
-    rb.gravityScale = originalGravity;
-    isDashing = false;
-}
-
-
 
     void HandleCrouch()
     {
