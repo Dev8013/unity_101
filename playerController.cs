@@ -15,9 +15,10 @@ public float extraJumpForce = 10f;   // second‑jump force
     // [Header("Jump Settings")]
     // public int maxJumps = 2;
     // public float extraJumpForce = 12f;
-    [Header("Jump Settings")]
-public int maxJumps = 2;      // total jumps allowed (ground + air)
+[Header("Jump Settings")]
+public int maxJumps = 2;   // 2 total: 1 on ground + 1 in air
 int jumpsLeft;
+
 
 
 
@@ -83,7 +84,7 @@ int jumpsLeft;
     //         usedBoost = false;
     //     }
     // }
-    void CheckGround()
+void CheckGround()
 {
     isGrounded = Physics2D.OverlapCircle(
         groundCheck.position,
@@ -93,9 +94,10 @@ int jumpsLeft;
 
     if (isGrounded)
     {
-        jumpsLeft = maxJumps;   // reset to 2 when on ground
+        jumpsLeft = maxJumps;   // back to 2 only on ground
     }
 }
+
 
 
     void HandleMove()
@@ -134,20 +136,19 @@ int jumpsLeft;
     //         usedBoost = true;
     //     }
     // }
-    void HandleJumpAndBoost()
+void HandleJumpAndBoost()
 {
-    // Simple double jump: Space up to maxJumps times
     if (Input.GetKeyDown(KeyCode.Space) && jumpsLeft > 0)
     {
-        // optional: stronger first jump, weaker second
         float force = (jumpsLeft == maxJumps) ? jumpForce : extraJumpForce;
 
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
         rb.AddForce(Vector2.up * force, ForceMode2D.Impulse);
 
-        jumpsLeft--;
+        jumpsLeft--;   // 2 -> 1 -> 0 (max 2 jumps)
     }
 }
+
 
 
 
