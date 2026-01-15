@@ -17,7 +17,7 @@ public class Enemy : MonoBehaviour
     {
         currentHealth = maxHealth;
 
-        maxShield = Mathf.RoundToInt(maxHealth * shieldPercent);
+        maxShield = (int)(maxHealth * shieldPercent);
         currentShield = maxShield;
 
         // Debug to verify
