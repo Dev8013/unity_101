@@ -28,6 +28,10 @@
 **/.vscode/**
 !**/.vscode/settings.json
 
+# Ignore Fantasy Skybox FREE asset
+Assets/Fantasy Skybox FREE/
+
+
 # Windows generated
 **/Thumbs.db
 **/desktop.ini
